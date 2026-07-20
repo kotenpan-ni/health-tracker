@@ -1,0 +1,197 @@
+<!doctype html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>健康管理ノート</title>
+<link rel="stylesheet" href="style.css" />
+</head>
+<body>
+<div class="app">
+  <header class="top">
+    <div>
+      <h1>健康管理ノート</h1>
+      <div class="sub">毎日の食事と体重を記録しよう</div>
+    </div>
+  </header>
+
+  <nav class="tabs">
+    <button data-tab="today" class="active">今日の記録</button>
+    <button data-tab="weight">体重</button>
+    <button data-tab="history">履歴</button>
+    <button data-tab="profile">設定</button>
+  </nav>
+
+  <main>
+    <!-- 今日の記録 -->
+    <section id="tab-today" class="tab-section active">
+      <div class="card">
+        <input type="date" id="current-date" />
+        <div id="no-profile-notice" style="display:none; font-size:0.8rem; color:var(--muted); margin-bottom:10px;">
+          「設定」タブでプロフィールを登録すると、あなたに合った目標値が表示されます。
+        </div>
+
+        <h2>カロリー</h2>
+        <div class="summary-row">
+          <span class="value" id="kcal-value">0</span>
+          <span class="target" id="kcal-target">/ 2000 kcal</span>
+        </div>
+        <div class="progress-bar"><div id="kcal-bar" style="width:0%"></div></div>
+
+        <div class="macro-grid">
+          <div class="macro-item">
+            <div class="label"><span class="dot p"></span>タンパク質</div>
+            <div class="amount" id="macro-p-amount">0 / 0g</div>
+            <div class="progress-bar"><div class="p" id="macro-p-bar" style="width:0%"></div></div>
+          </div>
+          <div class="macro-item">
+            <div class="label"><span class="dot f"></span>脂質</div>
+            <div class="amount" id="macro-f-amount">0 / 0g</div>
+            <div class="progress-bar"><div class="f" id="macro-f-bar" style="width:0%"></div></div>
+          </div>
+          <div class="macro-item">
+            <div class="label"><span class="dot c"></span>炭水化物</div>
+            <div class="amount" id="macro-c-amount">0 / 0g</div>
+            <div class="progress-bar"><div class="c" id="macro-c-bar" style="width:0%"></div></div>
+          </div>
+        </div>
+      </div>
+
+      <div class="card">
+        <div id="meals-container"></div>
+      </div>
+    </section>
+
+    <!-- 体重 -->
+    <section id="tab-weight" class="tab-section">
+      <div class="card">
+        <h2>体重を記録</h2>
+        <label>日付</label>
+        <input type="date" id="weight-date" />
+        <label>体重 (kg)</label>
+        <div class="weight-input-row">
+          <input type="number" id="weight-input" step="0.1" placeholder="例: 60.5" />
+          <button id="add-weight-btn">記録</button>
+        </div>
+      </div>
+      <div class="card">
+        <h2>推移</h2>
+        <svg class="chart" id="weight-chart"></svg>
+      </div>
+      <div class="card">
+        <h2>記録一覧</h2>
+        <div id="weight-list"></div>
+      </div>
+    </section>
+
+    <!-- 履歴 -->
+    <section id="tab-history" class="tab-section">
+      <div class="card">
+        <h2>過去の記録（カロリー）</h2>
+        <div id="history-list"></div>
+      </div>
+    </section>
+
+    <!-- 設定 -->
+    <section id="tab-profile" class="tab-section">
+      <div class="card">
+        <h2>プロフィール</h2>
+        <div class="form-row">
+          <div>
+            <label>年齢</label>
+            <input type="number" id="p-age" />
+          </div>
+          <div>
+            <label>性別</label>
+            <select id="p-gender">
+              <option value="male">男性</option>
+              <option value="female">女性</option>
+            </select>
+          </div>
+        </div>
+        <div class="form-row">
+          <div>
+            <label>身長 (cm)</label>
+            <input type="number" id="p-height" />
+          </div>
+          <div>
+            <label>現在の体重 (kg)</label>
+            <input type="number" id="p-weight" step="0.1" />
+          </div>
+        </div>
+        <label>活動レベル</label>
+        <select id="p-activity">
+          <option value="sedentary">ほとんど運動しない（デスクワーク中心）</option>
+          <option value="light">軽い運動（週1〜3回）</option>
+          <option value="moderate" selected>中程度の運動（週3〜5回）</option>
+          <option value="active">激しい運動（週6〜7回）</option>
+          <option value="very_active">非常に激しい運動・肉体労働</option>
+        </select>
+        <label>目標</label>
+        <select id="p-goal">
+          <option value="lose">減量（-20%）</option>
+          <option value="lose_mild" selected>ゆるやかに減量（-10%）</option>
+          <option value="maintain">維持</option>
+          <option value="gain">増量（+10%）</option>
+        </select>
+        <button class="primary-btn" id="save-profile-btn">保存して目標を計算</button>
+
+        <div id="target-display" class="target-display" style="display:none;"></div>
+      </div>
+    </section>
+  </main>
+</div>
+
+<!-- 食事追加モーダル -->
+<div class="modal-overlay" id="modal-overlay">
+  <div class="modal" id="modal">
+    <div class="modal-title-row">
+      <h2><span id="modal-meal-type"></span>を追加</h2>
+      <button class="close-btn" id="close-modal">✕</button>
+    </div>
+
+    <div class="mode-toggle">
+      <button data-mode="search" class="active">食品を検索</button>
+      <button data-mode="manual">手入力</button>
+    </div>
+
+    <div id="search-panel">
+      <label>食品名で検索</label>
+      <input type="text" id="food-search" placeholder="例: ご飯、鶏むね肉..." />
+      <div class="search-results" id="search-results"></div>
+      <div class="selected-food-box" id="selected-food-box" style="display:none;"></div>
+      <button class="primary-btn" id="confirm-add-food">この内容で追加</button>
+    </div>
+
+    <div id="manual-panel" style="display:none;">
+      <label>食品名</label>
+      <input type="text" id="manual-name" placeholder="例: 自作サラダ" />
+      <div class="form-row">
+        <div>
+          <label>カロリー (kcal)</label>
+          <input type="number" id="manual-kcal" />
+        </div>
+        <div>
+          <label>タンパク質 (g)</label>
+          <input type="number" id="manual-p" />
+        </div>
+      </div>
+      <div class="form-row">
+        <div>
+          <label>脂質 (g)</label>
+          <input type="number" id="manual-f" />
+        </div>
+        <div>
+          <label>炭水化物 (g)</label>
+          <input type="number" id="manual-c" />
+        </div>
+      </div>
+      <button class="primary-btn" id="confirm-manual-food">この内容で追加</button>
+    </div>
+  </div>
+</div>
+
+<script src="foods.js"></script>
+<script src="script.js"></script>
+</body>
+</html>
