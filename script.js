@@ -29,63 +29,6 @@ let profile = load("ht_profile", null);
 let meals = load("ht_meals", []); // {id, date, mealType, name, kcal, p, f, c}
 let weights = load("ht_weights", []); // {id, date, weight}
 
-// ---------- 出産準備データ ----------
-const BIRTH_CATEGORIES = [
-  { id: "labor_bag", label: "陣痛バッグ（陣痛が来たらすぐ持って行く）" },
-  { id: "hospital_bag", label: "入院バッグ（入院中に必要なもの）" },
-  { id: "baby_items", label: "赤ちゃん用品" },
-  { id: "not_needed", label: "持参不要品（産院の貸出・支給品）" },
-  { id: "after_home", label: "帰宅後グッズ" },
-  { id: "pending", label: "検討中・未決定事項" },
-];
-
-const DEFAULT_BIRTH_ITEMS = [
-  // 陣痛バッグ
-  { id: "b-mothernote", category: "labor_bag", name: "母子手帳・診察券・保険証", note: "" },
-  { id: "b-cash", category: "labor_bag", name: "現金・印鑑", note: "" },
-  { id: "b-phone", category: "labor_bag", name: "スマホ・充電器", note: "" },
-  { id: "b-jelly", category: "labor_bag", name: "ゼリー飲料（陣痛時のエネルギー補給）", note: "ウイダーinゼリー エネルギー マスカット味が第一候補" },
-  { id: "b-tennisball", category: "labor_bag", name: "テニスボール等（腰押し用）", note: "" },
-  { id: "b-fan", category: "labor_bag", name: "うちわ・手持ち扇風機", note: "" },
-
-  // 入院バッグ
-  { id: "b-pajama", category: "hospital_bag", name: "パジャマ・部屋着（前開き）", note: "" },
-  { id: "b-nursingbra", category: "hospital_bag", name: "授乳用ブラ・パッド", note: "" },
-  { id: "b-toiletries", category: "hospital_bag", name: "洗面用具・タオル", note: "" },
-  { id: "b-earplug", category: "hospital_bag", name: "耳栓", note: "入院中は優先度低め。帰宅後の夜間交代制用として購入予定" },
-  { id: "b-slippers", category: "hospital_bag", name: "スリッパ", note: "" },
-  { id: "b-outfit-me", category: "hospital_bag", name: "退院時の服（自分用）", note: "" },
-  { id: "b-carseat", category: "hospital_bag", name: "チャイルドシート（退院時に必要）", note: "" },
-
-  // 赤ちゃん用品
-  { id: "b-clothes", category: "baby_items", name: "短肌着・コンビ肌着", note: "購入済み", checked: true },
-  { id: "b-swaddle", category: "baby_items", name: "おくるみ", note: "ユニクロで購入済み", checked: true },
-  { id: "b-carrier", category: "baby_items", name: "抱っこ紐", note: "ベビービョルン「ハーモニー」に決定（試着済み・新生児からインサート不要・後抱き・4way）" },
-  { id: "b-diaper", category: "baby_items", name: "おむつ（新生児用）", note: "" },
-  { id: "b-wipes", category: "baby_items", name: "おしりふき", note: "" },
-  { id: "b-gauze", category: "baby_items", name: "ガーゼハンカチ", note: "" },
-  { id: "b-outfit-baby", category: "baby_items", name: "カバーオール／ショートオール", note: "新生児期は不要と判断、後回しでOK" },
-
-  // 持参不要品
-  { id: "b-clinic-list", category: "not_needed", name: "産院の貸出・支給品リストを確認", note: "わたしのクリニック産科LCの案内に基づく。施設ごとに異なるため必ず最新の案内で確認" },
-  { id: "b-postpartum-pants", category: "not_needed", name: "産褥ショーツ（入院中）", note: "産院支給の可能性あり。要確認" },
-  { id: "b-babywear-in", category: "not_needed", name: "赤ちゃんの肌着・おむつ（入院中）", note: "産院支給の可能性あり。要確認" },
-
-  // 帰宅後グッズ
-  { id: "b-pump", category: "after_home", name: "搾乳機", note: "保留：産後の母乳の出次第で判断" },
-  { id: "b-scale", category: "after_home", name: "ベビースケール", note: "保留：レンタルも選択肢" },
-  { id: "b-babybath", category: "after_home", name: "ベビーバス・沐浴剤", note: "" },
-
-  // 検討中・未決定
-  { id: "b-omiyamairi", category: "pending", name: "お宮参りの実施可否・時期", note: "義務ではなく任意行事。8月出産だと真夏になるため時期をずらす方向で検討中（未確定）" },
-];
-
-let birthItems = load("ht_birth_items", null);
-if (!birthItems) {
-  birthItems = DEFAULT_BIRTH_ITEMS.map((i) => ({ checked: false, ...i }));
-  save("ht_birth_items", birthItems);
-}
-
 const MEAL_TYPES = ["朝食", "昼食", "夕食", "間食"];
 
 const ACTIVITY_FACTORS = {
@@ -130,7 +73,6 @@ function switchTab(tab) {
   if (tab === "weight") renderWeightTab();
   if (tab === "history") renderHistoryTab();
   if (tab === "today") renderTodayTab();
-  if (tab === "birth") renderBirthTab();
   if (tab === "profile") renderProfileTab();
 }
 
@@ -479,81 +421,6 @@ function saveProfile() {
   save("ht_profile", profile);
   showTargetDisplay(profile);
   renderTodayTab();
-}
-
-// ---------- 出産準備タブ ----------
-function renderBirthTab() {
-  const total = birthItems.length;
-  const done = birthItems.filter((i) => i.checked).length;
-  const pct = total > 0 ? Math.round((done / total) * 100) : 0;
-  $("#birth-progress-bar").style.width = pct + "%";
-  $("#birth-progress-text").textContent = `${done} / ${total} 完了`;
-
-  const container = $("#birth-categories");
-  container.innerHTML = BIRTH_CATEGORIES.map(
-    (cat) => `
-    <div class="card">
-      <h2>${escapeHtml(cat.label)}</h2>
-      <div class="checklist" id="birth-list-${cat.id}"></div>
-      <div class="add-item-row">
-        <input type="text" id="birth-add-input-${cat.id}" placeholder="項目を追加" />
-        <button data-cat="${cat.id}" class="birth-add-btn">追加</button>
-      </div>
-    </div>
-  `
-  ).join("");
-
-  BIRTH_CATEGORIES.forEach((cat) => {
-    const listEl = $(`#birth-list-${cat.id}`);
-    const items = birthItems.filter((i) => i.category === cat.id);
-    if (items.length === 0) {
-      listEl.innerHTML = '<div class="empty-msg">項目はありません</div>';
-      return;
-    }
-    items.forEach((item) => {
-      const row = document.createElement("div");
-      row.className = "checklist-item";
-      row.innerHTML = `
-        <label class="checklist-label">
-          <input type="checkbox" data-id="${item.id}" ${item.checked ? "checked" : ""} />
-          <span class="checklist-text">
-            <span class="checklist-name ${item.checked ? "done" : ""}">${escapeHtml(item.name)}</span>
-            ${item.note ? `<span class="checklist-note">${escapeHtml(item.note)}</span>` : ""}
-          </span>
-        </label>
-        <button class="del-btn" data-del="${item.id}">✕</button>
-      `;
-      row.querySelector("input[type=checkbox]").addEventListener("change", (e) => {
-        item.checked = e.target.checked;
-        save("ht_birth_items", birthItems);
-        renderBirthTab();
-      });
-      row.querySelector("[data-del]").addEventListener("click", () => {
-        birthItems = birthItems.filter((i) => i.id !== item.id);
-        save("ht_birth_items", birthItems);
-        renderBirthTab();
-      });
-      listEl.appendChild(row);
-    });
-  });
-
-  $$(".birth-add-btn").forEach((btn) => {
-    btn.addEventListener("click", () => addBirthItem(btn.dataset.cat));
-  });
-  BIRTH_CATEGORIES.forEach((cat) => {
-    $(`#birth-add-input-${cat.id}`).addEventListener("keydown", (e) => {
-      if (e.key === "Enter") addBirthItem(cat.id);
-    });
-  });
-}
-
-function addBirthItem(catId) {
-  const input = $(`#birth-add-input-${catId}`);
-  const name = input.value.trim();
-  if (!name) return;
-  birthItems.push({ id: uid(), category: catId, name, note: "", checked: false });
-  save("ht_birth_items", birthItems);
-  renderBirthTab();
 }
 
 // ---------- 食事ブロック生成 ----------
